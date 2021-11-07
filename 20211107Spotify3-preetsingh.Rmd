@@ -1,0 +1,164 @@
+---
+title: "Do Musicians learn from Feedback? Examination of Popular songs from Spotify"
+author: "Dr Preet Deep Singh"
+affiliation: "Invest India"
+date: "09/09/2021"
+output: 
+  bookdown::pdf_document2:
+    toc: no
+    citation_package: natbib
+    number_sections: yes
+    keep_tex: yes
+abstract: "Using a dataset of 5,86,672 songs from Spotify, we evaluate whether artists learn from the response their songs get or not. We find that popularity of songs improves with iterations. We plot whether artists have their biggest hits in their first year or subsequent years."
+documentclass: "article"
+editor_options: 
+  chunk_output_type: console
+  markdown: 
+    wrap: sentence
+bibliography: references.bib
+link-citations: true
+csl: apa.csl
+---
+
+```{r setup, echo=FALSE, warning=FALSE, header=FALSE}
+library(tidyverse)
+library(ARTofR)
+library(stargazer)
+library(dplyr)
+countrywisecollated <- read_csv("Final database.csv") 
+countrywisecollated$ReleaseDate<-as.Date(as.character(countrywisecollated$Release_date))
+tracks <- read_csv("tracks.csv", col_types = cols(release_date = col_character()))
+tracks2 <- read_csv("spotify_tracks.csv") ##This has lyrics
+colnames(tracks2)[5]<-"id_artists" ##TO make it similar to TRacks file.
+tracks$release_date<-as.Date(as.character(tracks$release_date)) #this is now as per date
+tracks$YearRelease<-format(tracks$release_date,format="%Y") #Get year also
+artistyearfile2<-read_csv("artistyearfile2.csv")
+
+
+```
+
+In a series of papers, I try to examine the following questions
+#...............................................................................
+#                                                                              .
+# What does the average album look like: how many sad, what balance
+# Do albums with similar songs do better
+# Do albums have multiple hit songs or only 1/2 songs make it ?
+# Do artists experiment after a hit or do more of the same? Are they scare or overconfident?
+# Do negative songs do better?
+# Do winter songs do better?
+# When does a artist shine to fame: first or next or last?
+# Is the same song a hit in multiple places? What are unique geographic hits?
+In this paper, I look at the most popular hits of artists. I examine whether artists get their biggest hits in the first go and spend the rest of their lives trying to match that success or whether artists enter the market, release music, take feedback and improve in order to produce their most popular song. In case artists are learning from feedback, the popularity of their songs would have an upward trend. We regress 
+
+In case artists do not take feedback, their most popular songs would be spread randomly across their careers. For artists who had their most popular song in their first year, the subsequent years would entail a lot of experiments, most of which would fail and eventually they would retire. This means we should see artists with their best hits coming in the first year, dropping off in a couple of years post that. The year/date of the last song by a particular band can be used to check this hypothesis.
+
+Our data spans a total of `r length(unique(tracks$id))` songs by `r length(unique(tracks$id_artists))` across `r length(unique(tracks$YearRelease))` years. This includes `r nrow(filter(tracks,explicit==1))` explicit songs. 
+
+##WHen do you know you have failed?
+
+
+```{r artistyear2,eval=FALSE, echo=FALSE, warning=FALSE, header=FALSE}
+
+artistyearfile2<-data.frame()
+globalcollated2<-select(tracks, 1:8,YearRelease)
+for (i in 1:length(unique(globalcollated2$id_artists))){
+  df1<-filter(globalcollated2,id_artists==unique(globalcollated2$id_artists)[i])
+  df1<- df1[order(-df1$popularity),] #Arrange in Descending order
+  artistyearfile2[i,1]<-  unique(globalcollated2$id_artists)[i]
+  artistyearfile2[i,2]<-  min(df1$YearRelease,na.rm = TRUE) #First song #Easy, direct
+  artistyearfile2[i,3]<- min(df1$release_date,na.rm=TRUE)
+  artistyearfile2[i,4]<-  df2$YearRelease[1]#Top Song Year
+  artistyearfile2[i,5]<- df1$release_date[1] #NA hai toh avoid kar do .
+  artistyearfile2[i,6]<- max(df1$YearRelease,na.rm = TRUE) #First song #Easy, direct
+  artistyearfile2[i,7]<- max(df1$release_date,na.rm=TRUE)
+  #}
+  print(i)
+}
+colnames(artistyearfile2)<-c("Artist","Year1","Date1","GoldenYear","GoldenDate","LastYear","LastDate")
+```
+
+\section{Data}
+
+\subsection{Summary}
+
+* Total songs
+* Total Artists
+* Total Albums
+* Average Popularity
+* Year wise distribution
+
+
+
+```{r datasummary, echo=FALSE, warning=FALSE, header=FALSE}
+## countrywisecollated <- read_csv("Final database.csv") 
+## countrywisecollated$ReleaseDate<-as.Date(as.character(countrywisecollated$Release_date))
+## countrywisecollated$YearRelease<-format(countrywisecollated$ReleaseDate, format= "%Y")
+
+## globalcollated<-filter(countrywisecollated,Country=="Global")
+## globalcollated2<-select(globalcollated, 1:10,YearRelease)
+
+## The above are from the other database.
+stargazer(tracks,title="This table shows the summary of the dataset.")
+
+```
+
+
+
+```{r artistyear3, results='asis', echo=FALSE, warning=FALSE, header=FALSE}
+artistyearfile2<-read_csv("artistyearfile2.csv")
+artistyearfile2<-artistyearfile2%>%filter(!is.na(Year1)) #At least get the years right
+artistyearfile2$GYear<-format(artistyearfile2$GoldenYear,format="%Y") #See if th
+artistyearfile2$GYear<-as.numeric(artistyearfile2$GYear)
+artistyearfile2$Year1<-as.numeric(artistyearfile2$Year1)
+artistyearfile2$HitYearDiff<-artistyearfile2$GYear-artistyearfile2$Year1
+artistyearfile2$LastYear<-as.numeric(artistyearfile2$LastYear)
+artistyearfile2$LastHitYearDiff<- artistyearfile2$LastYear-artistyearfile2$GYear
+#artistyearfile2<-mutate(artistyearfile2, HitDayDiff= GoldenDate-Date1)
+artistyearfile2$LastHitDayDiff<-artistyearfile2$LastDate-artistyearfile2$GoldenDate
+
+stargazer(artistyearfile2, title ="This table ")
+```
+
+#...............................................................................
+We look at the year of the first song by the artist and the year of the most popular song by the artist. For example, if the artist released the first song in 1997, and their most popular song was released in 2001, then we note 2001-1997 = 4 as the time till the first hit. In case the most popular song was released in the same year, this number would be 0.
+
+This analysis allows us to answer the following questions
+# Who got it soonest
+# How many got it soonest
+# How many in 1 year
+# Who got it late
+# How many after 5 years
+
+
+
+\subsection{Regression}
+Sequence of songs 
+Only the most popular song on any date, incase there were multiple songs on the same date
+Only artists with more than 1 song 
+Get details of the music
+Regression on Popularity on All the factors 
+Find that sequence is a major contributor along with Explicit
+
+```{r reg1seqonpopularity, echo=FALSE, results='asis', warning=FALSE, header=FALSE}
+
+
+df5<-read_csv("HighestPerDatePerArt.csv") 
+df6<-filter(df5,seq==2) ##To ensure there is at least one more song and not just the first one
+df6<-select(df6,id_artists,name) # Name will tell us which ones are there in this 
+df6<-merge(df6,df5,by="id_artists",all.y=TRUE) #This is to get traits of the song
+df6<-filter(df6,!is.na(df6$name.x)) #This file now has all artists that have more than 1 song in the database.
+# To study role of sequence on popularity
+df6<-merge(df6,tracks,by="id", all.x=TRUE,all.y=FALSE)
+
+reg1<-lm(popularity.x~seq+duration_ms.x+danceability+energy+key+loudness+mode+speechiness+acousticness+
+     instrumentalness+instrumentalness +valence+tempo+time_signature+explicit.x+YearRelease.x,data=df6)
+reg2<-lm(popularity.x~seq+duration_ms.x+danceability+energy+key+loudness+mode+speechiness+acousticness+
+     instrumentalness+instrumentalness +valence+tempo+time_signature+explicit.x,data=df6)
+stargazer(reg1, reg2, omit="YearRelease.x",  omit.labels = "Year", type = "latex", title = "This table shows the results of regression of popularity on sequence and control variables.") ###yes, seq has a positive coefficient
+
+```
+
+
+\section{Limitations}
+Limited dataset: It is possible that there are some songs by certain artists that are not part of the half a million songs I use. In some cases, the biggest hit of a few artists might have existed in a particular year and is not accounted for in this study. However, our dataset is not biased in terms of vintage or recency. Therefore, I do not expect this to be systematically lopsided. 
+This data is from Spotify. The popularity of the app has gone up in each of the previous few years. It is possible that songs that were not hits in the first go, in the first geography subsequently became hits. This would not be accounted for in our study.
