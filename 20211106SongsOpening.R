@@ -95,13 +95,13 @@ artistyearfile2<-data.frame()
 
 #globalcollated<-filter(countrywisecollated,Country=="Global")
 globalcollated2<-select(tracks, 1:8,YearRelease)
-for (i in 1:length(unique(globalcollated2$id_artists))){
+for (i in 32507:length(unique(globalcollated2$id_artists))){ ### RUN THIS
   df1<-filter(globalcollated2,id_artists==unique(globalcollated2$id_artists)[i])
   df1<- df1[order(-df1$popularity),] #Arrange in Descending order
   artistyearfile2[i,1]<-  unique(globalcollated2$id_artists)[i]
   artistyearfile2[i,2]<-  min(df1$YearRelease,na.rm = TRUE) #First song #Easy, direct
   artistyearfile2[i,3]<- min(df1$release_date,na.rm=TRUE)
-  artistyearfile2[i,4]<-  df2$YearRelease[1]#Top Song Year
+  artistyearfile2[i,4]<-  df1$YearRelease[1]#Top Song Year
   artistyearfile2[i,5]<- df1$release_date[1] #NA hai toh avoid kar do .
   artistyearfile2[i,6]<- max(df1$YearRelease,na.rm = TRUE) #First song #Easy, direct
   artistyearfile2[i,7]<- max(df1$release_date,na.rm=TRUE)

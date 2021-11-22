@@ -1,5 +1,5 @@
 ---
-title: "Do Musicians learn? Evidence from Song Popularity"
+title: "Do Musicians learn? Very slowly"
 author: "Dr Preet Deep Singh"
 affiliation: "Invest India"
 date: "09/11/2021"
@@ -9,7 +9,7 @@ output:
     citation_package: natbib
     number_sections: yes
     keep_tex: yes
-abstract: "Using a dataset of 5,86,672 songs from Spotify, we evaluate whether artists are gifted beings who stick to their core creativity or learn and adapt basis their the response their songs get. We find that popularity of songs does not improve with iterations which could mean unpredictability of taste or inability of artists to adapt."
+abstract: "Using a dataset of 5,86,672 songs from Spotify, we evaluate whether artists are gifted beings who stick to their core creativity or learn and adapt basis their the response their songs get. We find that mean popularity of songs has improved over time but subsequent songs perform worse on averagefor the same artist."
 documentclass: "article"
 editor_options: 
   chunk_output_type: console
@@ -45,6 +45,26 @@ df5<-read_csv("HighestPerDatePerArt.csv")
 
 \section{Introduction}
 
+In this paper, I look at the most popular hits of artists.
+I examine whether artists get their biggest hits in the first go and spend the rest of their lives trying to match that success or whether artists enter the market, release music, take feedback and improve in order to produce more popular songs.
+In case artists are learning from feedback, the popularity of their songs would have an upward trend.
+
+In case artists do not take feedback, their most popular songs would be spread randomly across their careers.
+For artists who had their most popular song in their first year, the subsequent years would entail a lot of experiments, most of which would fail and eventually they would retire.
+This means we should see artists with their best hits coming in the first year, dropping off in a couple of years post that.
+The year/date of the last song by a particular band can be used to check this hypothesis.
+
+To examine learning we regress popularity of the songs on their sequence.
+We find that sequence has a negative coefficient that is statistically significant while controlling for other song traits.
+This implies that either artists are not able to change as per the needs of the market or there is lack of clarity in what people want.
+It is believed that artists are, by nature, creative.
+They create what they feel is good rather than with a commercial mindset.
+This theory has been questioned and it would be wrong to assume that all artists follow this sort of a pure approach with no regard to fame and fortune.
+Further, if artists could learn then every artist would continue to produce hits, each better than the last one.
+In fact, a new artist could simply learn from a database of songs and their popularity.
+This would mean that every new song would be better than the current best song.
+This sounds far-fetched.
+
 In a series of papers (@singh2021make ) , I try to examine the following questions.
 
 -   What does the average album look like: how many sad, what balance
@@ -67,19 +87,6 @@ In a series of papers (@singh2021make ) , I try to examine the following questio
 
 Some of my other work pertains to perceptions of founders in startups ([@singh2021perception1; @singh2021perception2; @singh2021perception3; @singh2021perception4; @singh2021perception5; @singh2021start]), Olympic medals ([@singh2021olympic; @singh2021names]), Covid data [@singh2020close; @singh2020quantifying], trading strategy [@singh2015square], CSR [@singh2016whether], Crowdfunding [@singh2021crowdfunding; @singh2021emotional] and some Finance and Director diligence stuff [@singh2016impact; @singh2016executive; @singh2017essay] .
 
-In this paper, I look at the most popular hits of artists.
-I examine whether artists get their biggest hits in the first go and spend the rest of their lives trying to match that success or whether artists enter the market, release music, take feedback and improve in order to produce more popular songs.
-In case artists are learning from feedback, the popularity of their songs would have an upward trend.
-
-In case artists do not take feedback, their most popular songs would be spread randomly across their careers.
-For artists who had their most popular song in their first year, the subsequent years would entail a lot of experiments, most of which would fail and eventually they would retire.
-This means we should see artists with their best hits coming in the first year, dropping off in a couple of years post that.
-The year/date of the last song by a particular band can be used to check this hypothesis.
-
-To examine learning we regress popularity of the songs on their sequence.
-We find that sequence has a negative coefficient that is statistically significant while controlling for other song traits.
-We remove remastered songs from our dataset for the purpose of analyses.
-
 Our data spans a total of `r length(unique(tracks$id))` songs by `r length(unique(tracks$id_artists))` across `r length(unique(tracks$YearRelease))` years.
 This includes `r nrow(filter(tracks,explicit==1))` explicit songs.
 
@@ -93,7 +100,7 @@ for (i in 1:length(unique(globalcollated2$id_artists))){
   artistyearfile2[i,1]<-  unique(globalcollated2$id_artists)[i]
   artistyearfile2[i,2]<-  min(df1$YearRelease,na.rm = TRUE) #First song #Easy, direct
   artistyearfile2[i,3]<- min(df1$release_date,na.rm=TRUE)
-  artistyearfile2[i,4]<-df2$YearRelease[1]#Top Song Year
+  artistyearfile2[i,4]<-df1$YearRelease[1]#Top Song Year
   artistyearfile2[i,5]<- df1$release_date[1] #NA hai toh avoid kar do .
   artistyearfile2[i,6]<- max(df1$YearRelease,na.rm = TRUE) #First song #Easy, direct
   artistyearfile2[i,7]<- max(df1$release_date,na.rm=TRUE)
@@ -105,11 +112,11 @@ colnames(artistyearfile2)<-c("Artist","Year1","Date1","GoldenYear","GoldenDate",
 
 \section{Data}
 
+We remove remastered songs from our data for the purpose of analyses.
+
 \subsection{Summary}
 
 -   Total songs
--   Total Artists
--   Total Albums
 -   Average Popularity
 -   Year wise distribution
 
@@ -124,11 +131,11 @@ stargazer(as.data.frame(tracks),title="This table shows the summary of the datas
 
 ```
 
-Figure \@ref(datasummary2) shows the date wise distribution of songs in our dataset.
+Figure \@ref(fig:datasummary2) shows the date wise distribution of songs in our dataset.
 Figure \@ref(fig:datasummary3) shows the year wise distribution of songs in our dataset.
 \#\#IF this is correct, use the same label command in the previous one.
 
-```{r datasummary2, echo=FALSE, message=FALSE, warning=FALSE, header=FALSE, }
+```{r datasummary2,fig.cap="\\label{fig:datasummary2}This graph shows the date wise distribution of songs.", echo=FALSE, message=FALSE, warning=FALSE, header=FALSE, }
 library(ggplot2)
 datewise<-tracks%>%group_by(release_date)%>%summarise(release_date=release_date,songs=length(release_date))
 plot<-ggplot(aes(x=release_date,y=songs),data=datewise)+geom_line() +ylim(0,1000)
@@ -160,8 +167,8 @@ artistyearfile2$Year1<-as.numeric(artistyearfile2$Year1)
 artistyearfile2$HitYearDiff<-artistyearfile2$GYear-artistyearfile2$Year1
 artistyearfile2$LastYear<-as.numeric(artistyearfile2$LastYear)
 artistyearfile2$LastHitYearDiff<- artistyearfile2$LastYear-artistyearfile2$GYear
-#artistyearfile2<-mutate(artistyearfile2, HitDayDiff= GoldenDate-Date1)  ##SEE IF YOU WANT TO RUN THESE TWO 
-#artistyearfile2$LastHitDayDiff<-artistyearfile2$LastDate-artistyearfile2$GoldenDate ##YOu can Run this in this one. 
+#artistyearfile2<-mutate(artistyearfile2, HitDayDiff= GoldenDate2Date1)  ##SEE IF YOU WANT TO RUN THESE TWO 
+artistyearfile2$LastHitDayDiff<-artistyearfile2$LastDate-artistyearfile2$GoldenDate ##YOu can Run this in this one. 
 
 stargazer(as.data.frame(artistyearfile2),title="This table shows the summary of the dates of first song, biggest hit and last song per artist.")
 ```
@@ -170,23 +177,69 @@ We look at the year of the first song by the artist and the year of the most pop
 For example, if the artist released the first song in 1997, and their most popular song was released in 2001, then we note 2001-1997 = 4 as the time till the first hit.
 In case the most popular song was released in the same year, this number would be 0.
 
-This analysis allows us to answer the following questions
-
--   Who got it soonest
-
--   How many got it soonest
-
--   How many in 1 year
-
--   Who got it late
-
--   How many after 5 years
+Based on the summary of the data, we see that on average the biggest hit of an artist comes about a year after their first song.
+Surprisingly, the last song of the artist is also almost a year after their biggest hit.
+This points to the temporary nature of the artist's popularity.
+These numbers only indicate a typical case, individual cases may vary.
 
 \subsection{Visually}
 
-We look at the average popularity of songs based on their sequence number.
+I plot popularity of songs over time.
+In case of learning, I expect to see an upward rising curve.
+In Figure \@ref(fig:timeavg1) I plot the popularity of all songs since 1970.
+Since the plot pertains to songs across time, it is actually plotting collective learning rather than individual learning of each artists.
+There is a clear upward trend.
+This could also be because of changing tastes.
+Music that was produced a decade ago might be closer in feel to that produced recently.
+We zoom in to this century in Figure \@ref(fig:timeavg2).
+We see that there is an overall upward trend since 2013 but it is not the case from 2000 to 2013.
+If popularity due to learning is a function of Spotify, then we should not be an upward trend between songs from 1970 and 1990.
 
-```{r iterationavg1, echo=FALSE, message=FALSE, warning=FALSE}
+We look at the average popularity of songs based on their sequence.
+Figure \@ref(fig:iterationavg1) shows the plot of all songs.
+Figure \@ref(fig:iterationavg2) shows the plot of all songs except those of artists who have only one song (in the data).
+This is because a single song would not help us understand whether an artist learnt or not.
+One of the reasons for only one song could be that the song was so bad that no other record company wanted to invest in that singer again.
+Some people could have released a song as a 'one-time-activity' rather than a serious professional pursuit.
+Figure \@ref(fig:iterationavg3) looks at the average popularity of songs by artists that have over 100 songs in the data.
+These would be people who stayed in the industry for a long time and would have survived owing to popularity \footnote{or a comfortable supply of money.}.
+Finally Figure \@ref(fig:iterationavg4) looks at the average popularity of songs by artists that have over 200 songs in the data.
+There are only two artists who qualify this cut-off.
+
+Spotify launched in 2011 in US \footnote{https://en.wikipedia.org/wiki/Spotify} whereas the popularity of songs created in those years is not very high.
+
+The general shape of the curve mimics that of a random variable.
+The hypothesis of learning and continuous improvement ca be rejected.
+
+```{r timeavg1, fig.cap="\\label{fig:timeavg1}Line plot of mean popularity of all songs", echo=FALSE, message=FALSE, warning=FALSE}
+
+df5<-read_csv("HighestPerDatePerArt.csv")
+df5<-select(df5,-X1)
+df5<-unique(df5)
+df5<-filter(df5,!grepl("[Rr]emaste",name,ignore.case = TRUE))
+df5<-filter(df5,YearRelease>1970)
+
+seqa1<-df5%>%group_by(YearRelease)%>%summarise(meanpop=mean(popularity,na.rm=TRUE ))
+plotallsongs<-ggplot(aes(x=YearRelease,y=meanpop),data=seqa1)+geom_line() +labs(title ="Line plot of mean popularity of all songs over time.",x="Sequence",y="Popularity") + theme(
+  plot.title = element_text( size = 12))
+print(plotallsongs)
+
+
+```
+
+```{r timeavg2, fig.cap="\\label{fig:timeavg2}Line plot of mean popularity of all songs", echo=FALSE, message=FALSE, warning=FALSE}
+
+df5<-filter(df5,YearRelease>2000)
+
+seqa1<-df5%>%group_by(YearRelease)%>%summarise(meanpop=mean(popularity,na.rm=TRUE ))
+plotallsongs<-ggplot(aes(x=YearRelease,y=meanpop),data=seqa1)+geom_line() +labs(title ="Line plot of mean popularity of all songs over time.",x="Sequence",y="Popularity") + theme(
+  plot.title = element_text( size = 12))
+print(plotallsongs)
+
+
+```
+
+```{r iterationavg1, fig.cap="\\label{fig:iterationavg1}Line plot of mean popularity of successive songs by all artists", echo=FALSE, message=FALSE, warning=FALSE}
 
 df5<-read_csv("HighestPerDatePerArt.csv")
 df5<-select(df5,-X1)
@@ -201,7 +254,7 @@ print(plotallartists)
 
 ```
 
-```{r iterationavg2, echo=FALSE, message=FALSE, warning=FALSE}
+```{r iterationavg2, echo=FALSE, fig.cap="\\label{fig:iterationavg2}Line plot of mean popularity of successive songs by all artists w/ 1+ songs", message=FALSE, warning=FALSE}
 
 df6<-filter(df5,seq==2) ##To ensure there is at least one more song and not just the first one
 df6<-select(df6,id_artists)
@@ -215,7 +268,7 @@ plotlongerartists<-ggplot(aes(x=seq,y=meanpop),data=seqa2)+geom_line() +labs(tit
 print(plotlongerartists)
 ```
 
-```{r iterationavg3, echo=FALSE, fig.height=4, fig.width=7, message=FALSE, warning=FALSE}
+```{r iterationavg3, echo=FALSE, fig.cap="\\label{fig:iterationavg3}Line plot of mean popularity of successive songs by all artists w/100+ songs", fig.height=4, fig.width=7, message=FALSE, warning=FALSE}
 
 
 df6<-filter(df5,seq==100) ##To ensure there is at least one more song and not just the first one
@@ -230,7 +283,7 @@ plotlongerartists<-ggplot(aes(x=seq,y=meanpop),data=seqa2)+geom_line() +labs(tit
 print(plotlongerartists)
 ```
 
-```{r iterationavg4, echo=FALSE, message=FALSE, warning=FALSE}
+```{r iterationavg4,  fig.cap="\\label{fig:iterationavg4}This graph shows the number of songs per year in our dataset",echo=FALSE, message=FALSE, warning=FALSE}
 
 
 df6<-filter(df5,seq==200) ##To ensure there is at least one more song and not just the first one
@@ -247,7 +300,23 @@ print(plotlongerartists)
 
 \subsection{Regression}
 
-Sequence of songs Only the most popular song on any date, incase there were multiple songs on the same date Only artists with more than 1 song Get details of the music Regression on Popularity on All the factors Find that sequence is a major contributor along with Explicit
+I look at the impact of the sequence of song on popularity while controlling for other factors.
+First, we filter to songs by artists who have at least two songs in our data.
+This is because we assign a sequence number for each artist.
+Our data indicates a series of songs, their popularity as well as the sequence in which they were released by the artist.
+An artist that was more active in the 80s would have their second song in 80s whereas a contemporary artist would have their second song in 2021.
+For the analysis, we use even time.
+Therefore, both the second songs are considered at par.
+This is true for all sequence numbers.
+The second adjustment we make is that for multiple songs being released on the same day by the same artist.
+In this case, we only use the value of the most popular song released on the same day.
+This way we are biasing ourselves towards finding evidence of learning as there would be improvement in taking the maximum instead of the average.
+We then add details of the songs as provided by Spotify.
+
+Table \@ref(tab:reg1seqonpopularity) shows the coefficients on sequence.
+The first one controls for explicit words in the song and the second one doesn't.
+However, whether to use explicit words is a matter of choice that contributes to the popluarity of the song.
+The coefficient is negative in both cases and when controlled for explicit nature, it is statistically significant with a p value of \<0.01.
 
 ```{r reg1seqonpopularity, echo=FALSE, results='asis', warning=FALSE, header=FALSE}
 
@@ -267,13 +336,19 @@ reg1<-lm(popularity.x~seq+duration_ms.x+danceability+energy+key+loudness+mode+sp
      instrumentalness +valence+tempo+time_signature+explicit.x+YearRelease.x,data=df6)
 reg2<-lm(popularity.x~seq+duration_ms.x+danceability+energy+key+loudness+mode+speechiness+acousticness+
      instrumentalness +valence+tempo+time_signature,data=df6) #No year or Explicit
-stargazer(reg1,reg2,omit="YearRelease.x",omit.labels="Year" ,title="This table shows the results of regression of popularity on sequence and other control variables.",no.space=TRUE,header = FALSE ) ###yes, seq has a negative coefficient
+stargazer(reg1,reg2,omit="YearRelease.x",omit.labels="Year" ,title="This table shows the results of regression of popularity on sequence and other control variables.",no.space=TRUE,header = FALSE) ###yes, seq has a negative coefficient
 
 ```
 
 \subsection{Drilling Down}
 
 In order to examine whether any learning takes place at the start of the career or during the later part, we run part regressions.
+In Table \@ref(tab:smallerregressions1) we show the regression on subsets.
+The first column contains data for the first 50 songs across artists.
+The second column shows data for 50-100 songs.
+The third column includes all data after the first 50 songs and the fourth column only looks at data after 1970.
+We see that over a longer horizon, and after 1970, the coefficient on sequence is statistically significant.
+It also shows that the coefficient is negative in both the cases, indicating a negative growth in subsequent production.
 
 ```{r smallerregressions1, message=FALSE, warning=FALSE, results='asis'}
 df7<-filter(df6,seq<50)
@@ -288,7 +363,7 @@ reg3<-lm(popularity.x~seq+duration_ms.x+danceability+energy+key+loudness+mode+sp
      instrumentalness +valence+tempo+time_signature+explicit.x+YearRelease.x,data=df9)
 reg4<-lm(popularity.x~seq+duration_ms.x+danceability+energy+key+loudness+mode+speechiness+acousticness+
      instrumentalness +valence+tempo+time_signature+explicit.x+YearRelease.x,data=df10)
-stargazer(reg1,reg2,reg3,reg4,omit="YearRelease.x",omit.labels="Year" ,title="This table shows the results of regression of popularity on sequence and other control variables",dep.var.labels=c("First50","50-100","AfterFirst50","After1970") , omit.stat=c("f"),column.sep.width = "1pt",no.space=TRUE,header = FALSE ) ###yes, seq has a negative coefficient
+stargazer(reg1,reg2,reg3,reg4,omit="YearRelease.x",omit.labels="Year" ,title="This table shows the results of regression of popularity on sequence and other control variables", omit.stat=c("f"),column.sep.width = "1pt",no.space=TRUE,header = FALSE ) ###yes, seq has a negative coefficient
 ```
 
 \section{Limitations}
@@ -305,3 +380,5 @@ While the songs from our study are from almost a century ago, Spotify as an app 
 This study assumes that the preference of people has been similar if not same.
 The study also assumes that the information regarding the popularity of songs was available to the artists.
 This would not be far-fetched as radio and record sales were always availing on a periodic basis.
+
+\newpage
